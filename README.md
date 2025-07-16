@@ -1,4 +1,4 @@
-## 🕙 Open WebUI Memory function
+## 🕙 Open WebUI Time Awareness function
 
 ### An [Open WebUI](https://github.com/open-webui/open-webui) filter that automatically adds time context to user messages, enabling AI assistants to be aware of the current time and date in conversations.
 
