@@ -1,3 +1,7 @@
+### 0.3.0: 2025-07-16
+
+* Fix possible regression when sending an image
+
 ### 0.2.0: 2025-07-16
 
 - Fix TypeError when handling multimodal content (list vs string)

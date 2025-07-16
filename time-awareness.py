@@ -3,7 +3,7 @@ title: Time Awareness
 author: Roni Laukkarinen
 description: Time Awareness for AI.
 repository_url: https://www.openwebui.com/f/abhiraaid/time_awareness
-version: 0.2.0
+version: 0.3.0
 required_open_webui_version: >= 0.5.0
 """
 
@@ -18,7 +18,6 @@ import uuid
 import bs4
 from bs4 import BeautifulSoup
 import re
-
 
 def set_logs(logger: logging.Logger, level: int, force: bool = False):
     logger.setLevel(level)
