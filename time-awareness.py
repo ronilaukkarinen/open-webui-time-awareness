@@ -3,7 +3,7 @@ title: Time Awareness
 author: Roni Laukkarinen
 description: Time Awareness for AI.
 repository_url: https://www.openwebui.com/f/abhiraaid/time_awareness
-version: 0.3.0
+version: 0.4.0
 required_open_webui_version: >= 0.5.0
 """
 
@@ -18,6 +18,7 @@ import uuid
 import bs4
 from bs4 import BeautifulSoup
 import re
+from pydantic import BaseModel, Field
 
 def set_logs(logger: logging.Logger, level: int, force: bool = False):
     logger.setLevel(level)
@@ -70,10 +71,13 @@ class ROLE:
 
 
 class Filter:
-    class Valves:
-        def __init__(self, timezone=None, priority=-10):
-            self.timezone = timezone or time.tzname[0]
-            self.priority = priority
+    class Valves(BaseModel):
+        timezone: str = Field(default="", description="Default system timezone (e.g., 'UTC', 'Europe/Helsinki')")
+        priority: int = Field(default=-10, description="Filter execution priority")
+        disable_for_image_generation: bool = Field(
+            default=True,
+            description="Disable time context injection for image generation requests (when Image button is clicked). Prevents interference with image generation prompts."
+        )
 
     class UserValves:
         def __init__(self, timezone=None, enabled=True):
@@ -86,6 +90,44 @@ class Filter:
         self.valves = self.Valves()
         self.uservalves = self.UserValves()
         self._queries = {}
+        
+        # Set default timezone if not provided
+        if not self.valves.timezone:
+            self.valves.timezone = time.tzname[0]
+
+    def is_image_generation_request(self, body, __request__=None):
+        """
+        Detect if the request is an image generation request using proven detection methods.
+        Based on the working implementation from open-webui-simple-cost-tracker.
+        """
+        # 1. URL endpoint detection - most reliable method
+        if __request__ and hasattr(__request__, 'url'):
+            url_str = str(__request__.url)
+            if '/api/images/generations' in url_str:
+                return True
+        
+        # 2. Request body parameter checks
+        image_params = ['size', 'n', 'response_format']
+        has_image_params = any(param in body for param in image_params)
+        has_prompt_only = 'prompt' in body and len([k for k in body.keys() if k not in ['prompt', 'model']]) == 0
+        
+        if has_image_params or has_prompt_only:
+            return True
+        
+        # 3. Metadata and features flags
+        metadata = body.get('metadata', {})
+        if metadata.get('image_generation') or metadata.get('generate_image'):
+            return True
+        
+        features = body.get('features', {})
+        if features.get('image_generation') or features.get('generate_image'):
+            return True
+        
+        # 4. ComfyUI workflow detection
+        if 'workflow' in body or 'comfyui' in str(body).lower():
+            return True
+        
+        return False
 
     async def get_time_context(
         self,
@@ -132,6 +174,7 @@ class Filter:
         body: dict,
         __event_emitter__,
         user: dict = None,
+        __request__: dict = None,
     ) -> dict:
         if user is not None:
             if not user.get("valves", {}).get("enabled", True):
@@ -139,6 +182,12 @@ class Filter:
         messages = body.get("messages")
         if not messages:
             return body
+        
+        # Check if this is an image generation request and if we should skip processing
+        if self.valves.disable_for_image_generation and self.is_image_generation_request(body, __request__):
+            # Skip time context injection for image generation requests
+            return body
+        
         context = await self.get_time_context(
             __event_emitter__=__event_emitter__,
             user=user,

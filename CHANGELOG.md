@@ -1,3 +1,12 @@
+### 0.4.0: 2025-07-16
+
+* Add image generation detection and skip functionality
+* Add `disable_for_image_generation` valve (enabled by default)
+* Implement official Open WebUI image generation request detection
+* Fix time context injection interfering with image generation prompts
+* Support ComfyUI workflow detection
+* Improve image generation quality by preventing prompt contamination
+
 ### 0.3.0: 2025-07-16
 
 * Fix possible regression when sending an image
