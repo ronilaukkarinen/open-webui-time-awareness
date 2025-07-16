@@ -1,4 +1,4 @@
-### 0.4.0: 2025-07-16
+### 0.4.0: 2025-07-17
 
 * Add image generation detection and skip functionality
 * Add `disable_for_image_generation` valve (enabled by default)
